@@ -144,13 +144,13 @@ public class GT_MetaTileEntity_PyrolyseOven extends GT_MetaTileEntity_EnhancedMu
 
         long tVoltage = getMaxInputVoltage();
         byte tTier = (byte) Math.max(1, GT_Utility.getTier(tVoltage));
-        GT_Recipe tRecipe = GT_Recipe.GT_Recipe_Map.sPyrolyseRecipes.findRecipe(getBaseMetaTileEntity(), false, gregtech.api.enums.GT_Values.V[tTier], tFluids, tInputs);
+        GT_Recipe tRecipe = GT_Recipe.GT_Recipe_Map.sPyrolyseRecipes.findRecipe(getBaseMetaTileEntity(), false, gregtech.api.enums.GT_Values.V[gregtech.api.enums.GT_Values.V.length - 1], tFluids, tInputs);
 
         //Dynamic recipe adding for newly found logWoods - wont be visible in nei most probably
         if (tRecipe == null)
             tRecipe = addRecipesDynamically(tInputs, tFluids, tTier);
 
-        if (tRecipe == null || !tRecipe.isRecipeInputEqual(true, tFluids, tInputs))
+        if (tRecipe == null || !tRecipe.isRecipeInputEqual(true, tFluids, tInputs) || gregtech.api.enums.GT_Values.V[tTier] * GT_Recipe.GT_Recipe_Map.sPyrolyseRecipes.mAmperage > tRecipe.mEUt)
             return false;
 
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
