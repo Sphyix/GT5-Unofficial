@@ -72,6 +72,7 @@ public class GT_MetaTileEntity_ProcessingArray extends GT_MetaTileEntity_CubicMu
                 .addInfo("Note that you still need to supply power to them all")
                 .addInfo("Use a screwdriver to enable separate input busses")
                 .addInfo("Maximal overclockedness of machines inside: Tier 9")
+                .addInfo("Maximal parallels: 64, UEV: 256")
                 .addInfo("Doesn't work on certain machines, deal with it")
                 .addInfo("Use it if you hate GT++, or want even more speed later on")
                 .addSeparator()
@@ -245,7 +246,7 @@ public class GT_MetaTileEntity_ProcessingArray extends GT_MetaTileEntity_CubicMu
     public boolean processLockedRecipe() {
         GT_Single_Recipe_Check_Processing_Array tSingleRecipeCheck = (GT_Single_Recipe_Check_Processing_Array) mSingleRecipeCheck;
 
-        int machines = Math.min(64, mInventory[1].stackSize << mMult); //Upped max Cap to 64
+        int machines = Math.max(64, mInventory[1].stackSize << mMult);
         int parallel = tSingleRecipeCheck.checkRecipeInputs(true, machines);
 
         return processRecipeOutputs(tSingleRecipeCheck.getRecipe(), tSingleRecipeCheck.getRecipeAmperage(), parallel);
@@ -268,7 +269,7 @@ public class GT_MetaTileEntity_ProcessingArray extends GT_MetaTileEntity_CubicMu
 
         boolean recipeLocked = false;
         mLastRecipe = tRecipe;
-        int machines = Math.min(64, mInventory[1].stackSize << mMult); //Upped max Cap to 64
+        int machines = Math.max(64, mInventory[1].stackSize << mMult);
         int i = 0;
         for (; i < machines; i++) {
             if (!tRecipe.isRecipeInputEqual(true, tFluids, tInputs)) {
