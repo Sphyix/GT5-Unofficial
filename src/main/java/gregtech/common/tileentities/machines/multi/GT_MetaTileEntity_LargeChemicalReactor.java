@@ -3,6 +3,7 @@ package gregtech.common.tileentities.machines.multi;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import gregtech.api.GregTech_API;
+import gregtech.api.enums.HeatingCoilLevel;
 import gregtech.api.gui.GT_GUIContainer_MultiMachine;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
@@ -28,11 +29,13 @@ import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_LARGE_CHEMICA
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_LARGE_CHEMICAL_REACTOR_ACTIVE_GLOW;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_LARGE_CHEMICAL_REACTOR_GLOW;
 import static gregtech.api.enums.Textures.BlockIcons.casingTexturePages;
+import static gregtech.api.util.GT_StructureUtility.ofCoil;
 import static gregtech.api.util.GT_StructureUtility.ofHatchAdder;
 
 public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_LargeChemicalReactor> {
     private static final int CASING_INDEX = 176;
     private static final String STRUCTURE_PIECE_MAIN = "main";
+    private HeatingCoilLevel mCoilLevel;
     private static final IStructureDefinition<GT_MetaTileEntity_LargeChemicalReactor> STRUCTURE_DEFINITION = StructureDefinition.<GT_MetaTileEntity_LargeChemicalReactor>builder()
             .addShape(STRUCTURE_PIECE_MAIN, transpose(new String[][]{
                     {"ccc", "cxc", "ccc"},
@@ -52,7 +55,7 @@ public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_En
                     ofHatchAdder(GT_MetaTileEntity_LargeChemicalReactor::addOutputToMachineList, CASING_INDEX, 2),
                     ofHatchAdder(GT_MetaTileEntity_LargeChemicalReactor::addMaintenanceToMachineList, CASING_INDEX, 2),
                     ofHatchAdder(GT_MetaTileEntity_LargeChemicalReactor::addEnergyInputToMachineList, CASING_INDEX, 2),
-                    onElementPass(GT_MetaTileEntity_LargeChemicalReactor::onCoilAdded, ofBlock(GregTech_API.sBlockCasings5, 0)),
+                    ofCoil(GT_MetaTileEntity_LargeChemicalReactor::setCoilLevel, GT_MetaTileEntity_LargeChemicalReactor::getCoilLevel),
                     onElementPass(GT_MetaTileEntity_LargeChemicalReactor::onCasingAdded, ofBlock(GregTech_API.sBlockCasings8, 0))
             ))
             .build();
@@ -62,6 +65,15 @@ public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_En
 
     public GT_MetaTileEntity_LargeChemicalReactor(int aID, String aName, String aNameRegional) {
         super(aID, aName, aNameRegional);
+    }
+
+    public void setCoilLevel(HeatingCoilLevel aCoilLevel) {
+        mCoilLevel = aCoilLevel;
+        mCoilAmount++;
+    }
+
+    public HeatingCoilLevel getCoilLevel() {
+        return mCoilLevel;
     }
 
     public GT_MetaTileEntity_LargeChemicalReactor(String aName) {
@@ -80,12 +92,13 @@ public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_En
                 .addInfo("Controller block for the Large Chemical Reactor")
                 .addInfo("Does not lose efficiency when overclocked")
                 .addInfo("Accepts fluids instead of fluid cells")
+                .addInfo("Adds 1 parallel for every Coil Block tier")
                 .addSeparator()
                 .beginStructureBlock(3, 3, 3, false)
                 .addController("Front center")
                 .addCasingInfo("Chemically Inert Machine Casing", 8)
                 .addOtherStructurePart("PTFE Pipe Machine Casing", "Center")
-                .addOtherStructurePart("Cupronickel Coil Block", "Adjacent to the PTFE Pipe Machine Casing", 1)
+                .addOtherStructurePart("Any Coil Block", "Adjacent to the PTFE Pipe Machine Casing", 1)
                 .addEnergyHatch("Any casing", 1, 2)
                 .addMaintenanceHatch("Any casing", 1, 2)
                 .addInputBus("Any casing", 1, 2)
@@ -131,11 +144,12 @@ public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_En
     @Override
     public boolean checkRecipe(ItemStack aStack) {
         long tVoltage = getMaxInputVoltage();
+        int coilTier = mCoilLevel.getTier();
         byte tier = (byte) Math.max(1, GT_Utility.getTier(tVoltage));
         GT_Recipe tRecipe;
 
         if (mLockedToSingleRecipe && mSingleRecipeCheck != null) {
-            if (!mSingleRecipeCheck.checkRecipeInputsSingleStack(true)) {
+            if (!mSingleRecipeCheck.checkRecipeInputs(true)) {
                 return false;
             }
 
@@ -227,14 +241,11 @@ public class GT_MetaTileEntity_LargeChemicalReactor extends GT_MetaTileEntity_En
         mCasingAmount++;
     }
 
-    private void onCoilAdded() {
-        mCoilAmount++;
-    }
-
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         mCasingAmount = 0;
         mCoilAmount = 0;
+        mCoilLevel = HeatingCoilLevel.None;
         return checkPiece(STRUCTURE_PIECE_MAIN, 1, 1, 0) &&
                 mCasingAmount >= 8 && mCoilAmount == 1 &&
                 !mEnergyHatches.isEmpty() && mMaintenanceHatches.size() == 1;
